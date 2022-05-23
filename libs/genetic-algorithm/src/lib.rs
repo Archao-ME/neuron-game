@@ -9,7 +9,8 @@ pub use self:: {
 
 pub struct GeneticAlgorithm<S> {
     selection_method: S,
-    crossover_method: Box<dyn CrossoverMethod>
+    crossover_method: Box<dyn CrossoverMethod>,
+    mutation_method: Box<dyn MutationMethod>
 }
 
 pub trait Individual {
@@ -34,11 +35,13 @@ where
 {
     pub fn new(
         selection_method: S,
-        crossover_method: impl CrossoverMethod + 'static
+        crossover_method: impl CrossoverMethod + 'static,
+        mutation_method: impl MutationMethod + 'static
     ) -> Self {
         Self { 
             selection_method,
-            crossover_method: Box::new(crossover_method)
+            crossover_method: Box::new(crossover_method),
+            mutation_method: Box::new(mutation_method)
          }
     }
 
@@ -66,9 +69,10 @@ where
                         .crossover_method
                         .crossover(rng, parent_a, parent_b);
                     
-                        // TODO mutation
-                        // TODO convert `Chromosome` back into `Individual`
-                        todo!()
+                    self.mutation_method.mutate(rng, &mut child);
+                    
+                    // TODO convert `Chromosome` back into `Individual`
+                    todo!()
                 })
                 .collect()
         }

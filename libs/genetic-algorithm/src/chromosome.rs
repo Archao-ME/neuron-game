@@ -204,3 +204,67 @@ mod crossover_test {
         assert_eq!(diff_b, 50);
     }
 }
+
+
+pub trait MutationMethod {
+    fn mutate(&self, rng: &mut dyn RngCore, child: &mut Chromosome);
+}
+
+#[derive(Clone, Debug)]
+pub struct GaussianMutation {
+    chance: f32,
+
+    coeff: f32,
+}
+
+impl GaussianMutation {
+
+    pub fn new(chance: f32, coeff: f32) -> Self {
+        assert!(chance >= 0.0 && chance <= 1.0);
+
+        Self { chance, coeff }
+    }
+    
+}
+
+impl MutationMethod for GaussianMutation {
+    fn mutate(&self, rng: &mut dyn RngCore, child: &mut Chromosome) {
+        for gene in child.iter_mut() {
+            let sign = if rng.gen_bool(0.5) { -1.0 } else { 1.0 };
+
+            if rng.gen_bool(self.chance as _) {
+                *gene += sign * self.coeff * rng.gen::<f32>();
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand_chacha::ChaCha8Rng;
+    use rand::SeedableRng;
+
+    fn actual(chance: f32, coeff: f32) -> Vec<f32> {
+        let mut child = vec![1.0, 2.0, 3.0, 4.0, 5.0]
+            .into_iter()
+            .collect();
+
+        let mut rng = ChaCha8Rng::from_seed(Default::default());
+
+        GaussianMutation::new(chance, coeff)
+            .mutate(&mut rng, &mut child);
+        
+            child.into_iter().collect()
+    }
+
+    mod given_zero_chance {
+    
+        mod and_zero_coefficient {
+            #[test]
+            fn does_not_change_the_original_chromosome() {
+                todo!();
+            }
+        }
+    }
+}
