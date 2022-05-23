@@ -1,5 +1,4 @@
-#[macro_use]
-extern crate approx;
+
 
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
@@ -98,8 +97,8 @@ mod tests {
             let mut rng = ChaCha8Rng::from_seed(Default::default());
             let neuron = Neuron::random(&mut rng, 4);
         
-            assert_relative_eq!(neuron.bias, -0.6255188);
-            assert_relative_eq!(neuron.weights.as_slice(), [
+            approx::assert_relative_eq!(neuron.bias, -0.6255188);
+            approx::assert_relative_eq!(neuron.weights.as_slice(), [
                 0.67383957,
                 0.8181262,
                 0.26284897,
