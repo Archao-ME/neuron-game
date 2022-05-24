@@ -14,8 +14,8 @@ pub struct GeneticAlgorithm<S> {
 }
 
 pub trait Individual {
+    fn create(chromosome: Chromosome) -> Self;
     fn fitness(&self) -> f32;
-
     fn chromosome(&self) -> &Chromosome;
 }
 
@@ -70,9 +70,8 @@ where
                         .crossover(rng, parent_a, parent_b);
                     
                     self.mutation_method.mutate(rng, &mut child);
-                    
-                    // TODO convert `Chromosome` back into `Individual`
-                    todo!()
+
+                    I::create(child)
                 })
                 .collect()
         }
@@ -102,24 +101,39 @@ impl SelectionMethod for RouletteWheelSelection {
 }
 
 #[cfg(test)]
-#[derive(Clone, Debug)]
-pub struct TestIndividual {
-    fitness: f32
+#[derive(Clone, Debug, PartialEq)]
+pub enum TestIndividual {
+    WithChromosome { chromosome: Chromosome },
+    WithFitness { fitness: f32 },
 }
 
 #[cfg(test)]
 impl TestIndividual {
     pub fn new(fitness: f32) -> Self {
-        Self { fitness }
+        Self::WithFitness { fitness }
     }
 }
 #[cfg(test)]
 impl Individual for TestIndividual {
-    fn fitness(&self) -> f32 {
-        self.fitness
+    fn create(chromosome: Chromosome) -> Self {
+        Self::WithChromosome { chromosome }
     }
     fn chromosome(&self) -> &Chromosome {
-        panic!("not supported for TestIndividual")
+        match self {
+            Self::WithChromosome { chromosome } => chromosome,
+            Self::WithFitness { .. } => {
+                panic!("...")
+            }
+        }
+    }
+    fn fitness(&self) -> f32 {
+        match self {
+            Self::WithChromosome { chromosome } => {
+                chromosome.iter().sum()
+            }
+
+            Self::WithFitness { fitness } => *fitness
+        }
     }
 }
 
@@ -162,5 +176,59 @@ mod tests {
         ]);
         
         assert_eq!(actual_histogram, expected_histogram);
+    }
+}
+
+
+#[cfg(test)]
+mod population_expected {
+    use super::*;
+    use rand::SeedableRng;
+    use rand_chacha::ChaCha8Rng;
+
+    fn individual(genes: &[f32]) -> TestIndividual {
+        let chromosome = genes.iter().cloned().collect();
+    
+        TestIndividual::create(chromosome)
+    }
+
+    #[test]
+    fn test() {
+        let mut rng = ChaCha8Rng::from_seed(Default::default());
+
+        let ga = GeneticAlgorithm::new(
+            RouletteWheelSelection::new(),
+            UniformCrossover::new(),
+            GaussianMutation::new(0.5, 0.5),
+        );
+
+        let mut population = vec![
+            /* todo */
+            individual(&[0.0, 0.0, 0.0]), // fitness = 0.0
+            individual(&[1.0, 1.0, 1.0]), // fitness = 3.0
+            individual(&[1.0, 2.0, 1.0]), // fitness = 4.0
+            individual(&[1.0, 2.0, 4.0]), // fitness = 7.0
+        ];
+
+        // We're running `.evolve()` a few times, so that the
+        // differences between initial and output population are
+        // easier to spot.
+        //
+        // No particular reason for a number of 10 - this test would
+        // be fine for 5, 20 or even 1000 generations; the only thing
+        // that'd change is the *magnitude* of difference between
+        // initial and output population.
+        for _ in 0..10 {
+            population = ga.evolve(&mut rng, &population);
+        }
+
+        let expected_population = vec![
+            individual(&[0.44769490, 2.0648358, 4.3058133]),
+            individual(&[1.21268670, 1.5538777, 2.8869110]),
+            individual(&[1.06176780, 2.2657390, 4.4287640]),
+            individual(&[0.95909685, 2.4618788, 4.0247330]),
+        ];
+
+        assert_eq!(population, expected_population);
     }
 }

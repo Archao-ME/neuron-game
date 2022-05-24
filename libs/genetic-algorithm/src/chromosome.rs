@@ -3,8 +3,9 @@ use std::{ops::Index};
 use rand::RngCore;
 use rand::Rng;
 
+#[derive(Clone, Debug)]
 pub struct Chromosome {
-    genes: Vec<f32>
+    pub genes: Vec<f32>
 }
 
 impl Chromosome {
@@ -18,6 +19,16 @@ impl Chromosome {
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut f32> {
         self.genes.iter_mut()
+    }
+}
+
+#[cfg(test)]
+impl PartialEq for Chromosome {
+    fn eq(&self, other: &Self) -> bool {
+        approx::relative_eq!(
+            self.genes.as_slice(),
+            other.genes.as_slice(),
+        )
     }
 }
 
@@ -259,12 +270,40 @@ mod tests {
     }
 
     mod given_zero_chance {
+
+        fn actual(coeff: f32) -> Vec<f32> {
+            super::actual(0.0, coeff)
+        }
     
         mod and_zero_coefficient {
+            use super::*;
+    
             #[test]
             fn does_not_change_the_original_chromosome() {
-                todo!();
+                let actual = actual(0.0);
+                let expected = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+    
+                approx::assert_relative_eq!(
+                    actual.as_slice(),
+                    expected.as_slice(),
+                );
             }
         }
+
+        mod and_nonzero_coefficient {
+            use super::*;
+    
+            #[test]
+            fn does_not_change_the_original_chromosome() {
+                let actual = actual(0.5);
+                let expected = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+    
+                approx::assert_relative_eq!(
+                    actual.as_slice(),
+                    expected.as_slice(),
+                );
+            }
+        }
+
     }
 }
