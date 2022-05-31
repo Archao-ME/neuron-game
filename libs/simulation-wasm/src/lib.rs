@@ -13,7 +13,6 @@ pub struct Simulation {
 impl Simulation {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
-        println!(".........new simulation");
         let mut rng = thread_rng();
         let sim = sim::Simulation::random(&mut rng);
     
